@@ -13,21 +13,31 @@ with col1:
 with col2:
     st.markdown("<h2 style='color:#2c6e49;'>BioBoost AI Dashboard</h2>", unsafe_allow_html=True)
 
-# Simulated Login
+
+# Initialize session state
 if 'authenticated' not in st.session_state:
     st.session_state.authenticated = False
+if 'login_attempted' not in st.session_state:
+    st.session_state.login_attempted = False
 
 if not st.session_state.authenticated:
-    st.subheader("User Login")
-    user = st.text_input("Username")
-    pw = st.text_input("Password", type="password")
-    if st.button("Login"):
+    st.title("BioBoost AI Login")
+    user = st.text_input("Username", key="user_input")
+    pw = st.text_input("Password", type="password", key="pw_input")
+    login = st.button("Login")
+
+    if login:
         if user == "abc" and pw == "abc":
             st.session_state.authenticated = True
-            st.experimental_rerun()
         else:
-            st.error("Invalid credentials. Try 'abc' / 'abc'.")
+            st.session_state.login_attempted = True
+
+    if st.session_state.login_attempted and not st.session_state.authenticated:
+        st.error("Invalid credentials. Try username: abc, password: abc")
     st.stop()
+
+
+
 
 # Tabs
 tab = st.selectbox("Navigate to section:", [
