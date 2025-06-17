@@ -1,58 +1,99 @@
 import streamlit as st
+import pandas as pd
+import numpy as np
+import plotly.express as px
 
-# Page Configuration
-st.set_page_config(page_title="BioBoost AI Prototype", layout="centered")
+# App Config
+st.set_page_config(page_title="BioBoost AI", layout="wide")
 
-# Initialize session state
-if "page" not in st.session_state:
-    st.session_state.page = "home"
+# Logo and Branding
+col1, col2 = st.columns([1, 8])
+with col1:
+    st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/1/1f/Green_energy_icon.svg/2048px-Green_energy_icon.svg.png", width=60)
+with col2:
+    st.markdown("<h2 style='color:#2c6e49;'>BioBoost AI Dashboard</h2>", unsafe_allow_html=True)
 
-# Home Page
-if st.session_state.page == "home":
-    st.title("BioBoost AI")
-    st.subheader("Smarter Biogas Prediction Using AI")
-    st.markdown("Predict methane output using simple plant inputs – no sensors required.")
-    if st.button("Start Prediction"):
-        st.session_state.page = "input"
+# Simulated login (very basic)
+if 'authenticated' not in st.session_state:
+    st.session_state.authenticated = False
 
-# Input Page
-if st.session_state.page == "input":
-    st.header("Enter Your Plant Data")
-    feedstock = st.selectbox("Feedstock Type", ["Cow dung", "Food waste", "Sludge", "Poultry litter"])
-    volume = st.number_input("Daily Input Volume (kg)", min_value=1.0)
-    solids = st.slider("Total Solids (%)", 5.0, 20.0, 10.0)
-    temp = st.number_input("Digester Temperature (°C)", min_value=10.0, max_value=70.0, value=35.0)
-    time = st.number_input("Retention Time (days)", min_value=5, max_value=60, value=30)
+if not st.session_state.authenticated:
+    st.subheader("User Login")
+    user = st.text_input("Username")
+    pw = st.text_input("Password", type="password")
+    if st.button("Login"):
+        if user == "abc" and pw == "abc":
+            st.session_state.authenticated = True
+            st.experimental_rerun()
+        else:
+            st.error("Invalid credentials. Try 'abc' / 'abc'.")
+    st.stop()
 
-    if st.button("Predict Biogas Yield"):
-        st.session_state.inputs = {
-            "feedstock": feedstock,
-            "volume": volume,
-            "solids": solids,
-            "temp": temp,
-            "time": time
-        }
-        st.session_state.page = "output"
+# Navigation tabs
+tab = st.selectbox("Navigate to section:", [
+    "Data Input", "Descriptive Analytics", "Predictive Analytics", "Prescriptive Analytics", "Help"])
 
-# Output Page
-if st.session_state.page == "output":
-    st.header("Prediction Result")
-    inputs = st.session_state.get("inputs", {})
+# Data Input Tab
+if tab == "Data Input":
+    st.subheader("Input Feedstock and Conditions")
+    st.write("Upload daily feedstock data or enter manually below.")
 
-    # Mock prediction logic
-    yield_estimate = round(inputs.get("volume", 1) * 0.045, 2)
-    energy_output = round(yield_estimate * 4.13, 2)
-    savings = round(energy_output * 0.18, 2)
+    uploaded = st.file_uploader("Upload CSV file", type=["csv"])
+    if uploaded:
+        df = pd.read_csv(uploaded)
+        st.dataframe(df)
+    else:
+        cow = st.number_input("Cow Manure (kg)", 0)
+        food = st.number_input("Food Waste (kg)", 0)
+        residue = st.number_input("Agri Residue (kg)", 0)
+        temp = st.number_input("Ambient Temperature (°C)", 0.0)
+        humid = st.number_input("Humidity (%)", 0.0)
 
-    st.metric("Predicted Methane Yield", f"{yield_estimate} m³/day")
-    st.metric("Expected Energy Output", f"{energy_output} kWh/day")
-    st.metric("Estimated Cost Saving", f"${savings}/day")
+# Descriptive Analytics
+elif tab == "Descriptive Analytics":
+    st.subheader("Descriptive Analytics")
+    st.markdown("Key Metrics for Biogas Plant")
+    kpi1, kpi2, kpi3 = st.columns(3)
+    kpi1.metric("Avg Daily Output", "102 m³")
+    kpi2.metric("Avg Methane %", "65%")
+    kpi3.metric("Digestate Produced", "130 kg")
 
-    st.line_chart({"Day": list(range(1, 8)), "Yield (m³)": [yield_estimate + i*0.1 for i in range(7)]})
+    st.write("Biogas Trends Over Time")
+    data = pd.DataFrame({
+        'Day': list(range(1, 11)),
+        'Biogas Output (m3)': np.random.randint(90, 120, 10)
+    })
+    fig = px.line(data, x='Day', y='Biogas Output (m3)', title="Daily Biogas Production")
+    st.plotly_chart(fig, use_container_width=True)
 
-    if st.button("Download Report (PDF)"):
-        st.info("PDF download will be implemented in the next version.")
+# Predictive Analytics
+elif tab == "Predictive Analytics":
+    st.subheader("Predict Biogas Output")
+    cow = st.slider("Cow Manure (kg)", 0, 100, 50)
+    food = st.slider("Food Waste (kg)", 0, 100, 30)
+    residue = st.slider("Agri Residue (kg)", 0, 100, 20)
+    temp = st.slider("Ambient Temp (°C)", 10, 40, 25)
+    humid = st.slider("Humidity (%)", 20, 90, 60)
 
-    if st.button("Back to Start"):
-        st.session_state.page = "home"
-        st.experimental_rerun()
+    predicted = 0.03*cow + 0.06*food + 0.02*residue + 0.1*(temp-25) - 0.05*(humid-60)
+    st.metric("Predicted Biogas Yield (m³)", f"{max(predicted, 0):.2f}")
+
+# Prescriptive Analytics
+elif tab == "Prescriptive Analytics":
+    st.subheader("Recommendations")
+    st.markdown("Use the following blend for optimal output:")
+    st.success("50% Cow Manure, 30% Food Waste, 20% Agri Residue")
+    pie_data = pd.DataFrame({"Feedstock": ["Cow Manure", "Food Waste", "Agri Residue"],
+                             "Proportion": [50, 30, 20]})
+    fig = px.pie(pie_data, names='Feedstock', values='Proportion', title="Optimal Mix")
+    st.plotly_chart(fig)
+
+# Help Tab
+elif tab == "Help":
+    st.subheader("How to Use BioBoost AI")
+    st.markdown("""
+    - **Data Input**: Enter or upload feedstock and environmental conditions
+    - **Descriptive Analytics**: View key historical trends and KPIs
+    - **Predictive Analytics**: Adjust inputs to simulate biogas output
+    - **Prescriptive Analytics**: See ideal ratios and system recommendations
+    """)
