@@ -1,43 +1,83 @@
 import streamlit as st
+import pandas as pd
+import numpy as np
 
-# Page 1: Welcome
-st.set_page_config(page_title="BioBoost AI Prototype")
-st.title("BioBoost AI")
-st.subheader("Smarter Biogas Prediction Using AI")
-st.markdown("Predict methane output using simple plant inputs – no sensors required.")
+st.set_page_config(page_title="BioBoost AI", layout="wide")
 
-if st.button("Start Prediction"):
-    st.session_state.page = "input"
+# Sidebar Navigation
+st.sidebar.image("https://upload.wikimedia.org/wikipedia/commons/thumb/1/1f/Green_energy_icon.svg/2048px-Green_energy_icon.svg.png", width=80)
+tab = st.sidebar.radio("Navigate", [
+    "User Login", "Data Input", "Descriptive Analytics",
+    "Predictive Analytics", "Prescriptive Analytics", "Help"])
 
-# Page 2: Input Form
-if st.session_state.get("page") == "input":
-    st.header("Enter Your Plant Data")
-    feedstock = st.selectbox("Feedstock Type", ["Cow dung", "Food waste", "Sludge", "Poultry litter"])
-    volume = st.number_input("Daily Input Volume (kg)", min_value=1.0)
-    solids = st.slider("Total Solids (%)", 5.0, 20.0, 10.0)
-    temp = st.number_input("Digester Temperature (°C)", min_value=10.0, max_value=70.0, value=35.0)
-    time = st.number_input("Retention Time (days)", min_value=5, max_value=60, value=30)
+# User Login Tab
+if tab == "User Login":
+    st.title("Welcome to BioBoost AI")
+    st.subheader("Fueling Biogas Intelligence")
+    login_method = st.selectbox("Choose login method", ["Email", "Google", "Facebook"])
+    st.text_input("Username")
+    st.text_input("Password", type="password")
+    st.button("Login")
 
-    if st.button("Predict Biogas Yield"):
-        # Store values and go to result page
-        st.session_state.inputs = {"feedstock": feedstock, "volume": volume, "solids": solids, "temp": temp, "time": time}
-        st.session_state.page = "output"
+# Data Input Tab
+elif tab == "Data Input":
+    st.title("Input Feedstock Data")
+    st.write("Upload daily feedstock data or input manually.")
 
-# Page 3: Result Screen
-if st.session_state.get("page") == "output":
-    st.header("Prediction Result")
-    inputs = st.session_state.get("inputs", {})
+    uploaded = st.file_uploader("Upload CSV file", type=["csv"])
+    if uploaded:
+        df = pd.read_csv(uploaded)
+        st.dataframe(df)
+    else:
+        st.write("Or enter data manually:")
+        manure = st.number_input("Cow Manure (kg)", min_value=0)
+        food_waste = st.number_input("Food Waste (kg)", min_value=0)
+        agri_residue = st.number_input("Agri Residue (kg)", min_value=0)
 
-    # Fake prediction logic
-    yield_estimate = round(inputs.get("volume", 1) * 0.045, 2)
-    energy_output = round(yield_estimate * 4.13, 2)
-    savings = round(energy_output * 0.18, 2)
+# Descriptive Analytics Tab
+elif tab == "Descriptive Analytics":
+    st.title("Plant Performance Overview")
+    st.subheader("Key Metrics and Visualizations")
+    st.write("Sample historical performance:")
+    # Mock data
+    sample_data = pd.DataFrame({
+        'Day': list(range(1, 11)),
+        'Biogas (m3)': np.random.randint(80, 120, size=10),
+        'Methane (%)': np.random.uniform(50, 70, size=10)
+    })
+    st.line_chart(sample_data.set_index('Day'))
 
-    st.metric("Predicted Methane Yield", f"{yield_estimate} m³/day")
-    st.metric("Expected Energy Output", f"{energy_output} kWh/day")
-    st.metric("Estimated Cost Saving", f"${savings}/day")
+# Predictive Analytics Tab
+elif tab == "Predictive Analytics":
+    st.title("Biogas Output Prediction")
+    st.subheader("Simulate your feedstock mix")
+    
+    cow = st.slider("Cow Manure (kg)", 0, 100, 50)
+    food = st.slider("Food Waste (kg)", 0, 100, 30)
+    residue = st.slider("Agri Residue (kg)", 0, 100, 20)
+    
+    predicted_yield = 0.03*cow + 0.06*food + 0.02*residue
+    st.metric("Predicted Biogas Yield (m³)", f"{predicted_yield:.2f}")
 
-    st.line_chart({"Day": list(range(1, 8)), "Yield (m³)": [yield_estimate + i*0.1 for i in range(7)]})
+# Prescriptive Analytics Tab
+elif tab == "Prescriptive Analytics":
+    st.title("Recommendations")
+    st.subheader("Based on your current inputs")
+    st.write("Suggested mix for optimal biogas output:")
+    st.markdown("- Cow Manure: 50%\n- Food Waste: 30%\n- Agri Residue: 20%")
+    st.success("Follow this mix to maximize methane production and system stability.")
 
-    st.button("Download Report (PDF)")
-    st.button("Back to Start", on_click=lambda: st.session_state.clear())
+# Help Tab
+elif tab == "Help":
+    st.title("Help & Navigation Guide")
+    st.markdown("""
+        **Tabs Overview:**
+        - **Login:** Sign in to access features
+        - **Data Input:** Upload or manually enter feedstock data
+        - **Descriptive Analytics:** View historical performance
+        - **Predictive Analytics:** Simulate future output
+        - **Prescriptive Analytics:** Get optimization recommendations
+    """)
+
+
+
